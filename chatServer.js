@@ -56,5 +56,17 @@ server.on('connect', (socket) => {
     // Emit event to all open sockets
     // console.log(userMsg);
     server.emit('msgToClients', { newMsg: userMsg });
+    // ^ equivalent to: server.of('/').emit('msgToClients', { newMsg: userMsg });
+  });
+});
+
+server.of('/test').on('connect', (socket) => {
+  socket.emit('msgFromServer', { msg: 'Connected to socket.io server' });
+  socket.on('msgToServer', (objectFromClient) => {
+    console.log(objectFromClient);
+  });
+
+  socket.on('userMsg', ({ userMsg }) => {
+    server.of('/test').emit('msgToClients', { newMsg: userMsg });
   });
 });

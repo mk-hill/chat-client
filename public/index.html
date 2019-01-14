@@ -6,42 +6,115 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link
       rel="stylesheet"
-      href="https://bootswatch.com/4/sketchy/bootstrap.min.css"
+      href="https://bootswatch.com/3/sandstone/bootstrap.min.css"
     />
-    <title>Chat em up</title>
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" type="text/css" href="./style.css" />
+    <title>Template</title>
   </head>
   <body>
-    <p class="ml-2">testing socket.io</p>
-    <div class="container mt-5">
+    <div class="container-fluid">
       <div class="row">
-        <div class="col-12">
-          <form id="msg-form">
-            <div class="col-10 mx-auto">
-              <label>Enter message</label>
-              <input
-                type="text"
-                id="user-input"
-                placeholder="Message goes here"
-                class="w-100"
-              />
+        <div class="col-sm-1 namespaces">
+          <div class="namespace" ns="/javascript">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/9/99/Unofficial_JavaScript_logo_2.svg"
+            />
+          </div>
+          <div class="namespace" ns="/python">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/165px-Python-logo-notext.svg.png"
+            />
+          </div>
+          <div class="namespace" ns="/linux">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png"
+            />
+          </div>
+        </div>
+        <div class="col-sm-2 rooms">
+          <h3>Rooms</h3>
+          <ul class="room-list">
+            <li onclick="joinRoom(1,2)">
+              <span class="glyphicon glyphicon-lock"></span>Main Room
+            </li>
+            <li onclick="joinRoom(2,1)">
+              <span class="glyphicon glyphicon-globe"></span>Meeting Room
+            </li>
+          </ul>
+        </div>
+        <div class="chat-panel col-sm-9">
+          <div class="room-header row col-6">
+            <div class="col-sm-3">
+              <span class="curr-room-text">Current Room</span>
+              <span class="curr-room-num-users"
+                >Users <span class="glyphicon glyphicon-user"></span
+              ></span>
             </div>
-            <div class="col-sm-5 mx-auto">
-              <input
-                type="submit"
-                value="Send"
-                class="btn-block btn-secondary w-50 mx-auto mt-3"
-              />
+            <div class="col-sm-3 search pull-right">
+              <span class="glyphicon glyphicon-search"></span>
+              <input type="text" id="search-box" placeholder="Search" />
             </div>
-          </form>
-          <ul id="msg-list"></ul>
+          </div>
+          <div class="message-form">
+            <form id="user-input">
+              <div class="col-sm-12">
+                <input
+                  id="user-message"
+                  type="text"
+                  placeholder="Enter your message"
+                />
+              </div>
+              <!-- <div class="col-sm-2">
+                <input class="btn btn-primary" type="submit" value="send" />
+              </div> -->
+            </form>
+          </div>
+          <ul id="messages" class="col-sm-12">
+            <li>
+              <div class="user-image">
+                <img src="https://via.placeholder.com/30" />
+              </div>
+              <div class="user-message">
+                <div class="user-name-time">rbunch <span>1:25 pm</span></div>
+                <div class="message-text">I went running today.</div>
+              </div>
+            </li>
+
+            <li>
+              <div class="user-image">
+                <img src="https://via.placeholder.com/30" />
+              </div>
+              <div class="user-message">
+                <div class="user-name-time">rbunch <span>2:25 pm</span></div>
+                <div class="message-text">
+                  I'm getting my tires changed this afternoon.
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="user-image">
+                <img src="https://via.placeholder.com/30" />
+              </div>
+              <div class="user-message">
+                <div class="user-name-time">rbunch <span>2:29 pm</span></div>
+                <div class="message-text">I like history.</div>
+              </div>
+            </li>
+            <li>
+              <div class="user-image">
+                <img src="https://via.placeholder.com/30" />
+              </div>
+              <div class="user-message">
+                <div class="user-name-time">rbunch <span>2:59 pm</span></div>
+                <div class="message-text">What day is tomorrow?</div>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
 
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script> -->
-    <!-- CDN not necessary, socket.io serves client at this path by default. -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="./app.js"></script>
+    <script src="/scripts.js"></script>
   </body>
 </html>

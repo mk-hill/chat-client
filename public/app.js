@@ -32,9 +32,12 @@ function addMessage(msg) {
 * Invocation returns "Socket" (not the same class as the one used on the server),
 * and creates new Manager
  */
-const socket = io('http://localhost:59768');
+const socket = io('http://localhost:59768'); // "/" namespace/endpoint
+const socket2 = io('http://localhost:59768/test'); // "/test" namespace/endpoint
 
 socket.on('connect', () => console.log(`Socket ID: ${socket.id}`));
+
+socket2.on('connect', () => console.log(`Test socket ID: ${socket2.id}`));
 
 // Custom events work the same way here in the client (any string except reserved ones)
 socket.on('msgFromServer', (objectFromServer) => {
