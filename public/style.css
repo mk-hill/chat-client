@@ -1,0 +1,32 @@
+body {
+        background: rgb(202, 224, 190);
+      }
+
+      p {
+        opacity: 0.2;
+      }
+
+      #user-input {
+        background: rgb(230, 238, 225);
+      }
+
+      input[type='submit'] {
+        cursor: pointer;
+      }
+
+      #msg-list {
+        margin-top: 1rem;
+        list-style: none;
+      }
+
+      #msg-list li {
+        border: 1px solid rgb(178, 209, 159);
+        border-radius: 5px;
+        padding: 0.3rem 0.5rem;
+        margin: 2px auto;
+        background: rgb(195, 224, 178);
+      }
+
+      #msg-list li:nth-child(even) {
+        background: rgb(210, 231, 196);
+      }
