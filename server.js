@@ -2,6 +2,9 @@ const express = require('express');
 
 const app = express();
 const SocketIoServer = require('socket.io'); // Exposes Server constructor func
+const namespaces = require('./data/namespaces');
+
+console.log(namespaces);
 
 app.use(express.static(`${__dirname}/public`));
 
