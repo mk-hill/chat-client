@@ -1,6 +1,7 @@
 //
 // ─── DOM STUFF ──────────────────────────────────────────────────────────────────
 //
+/**
 const p = document.querySelector('p');
 const msgInput = document.getElementById('user-input');
 const msgList = document.getElementById('msg-list');
@@ -19,7 +20,31 @@ function addMessage(msg) {
   newListItem.textContent = `${Date.now()}: ${msg}`;
   msgList.appendChild(newListItem);
 }
+ */
+const elems = {
+  nsContainer: document.querySelector('.namespaces'),
+};
 
+const ui = {
+  populateNsList(nsData) {
+    elems.nsContainer.innerHTML = '';
+    nsData.forEach((ns) => {
+      const div = document.createElement('div');
+      div.className = 'namespace';
+      div.dataset.endpoint = ns.endpoint; // Adding data attribute for use in click handler
+      const img = document.createElement('img');
+      img.src = ns.img;
+      div.appendChild(img);
+      elems.nsContainer.appendChild(div);
+    });
+    // getElementsByClassName returns HTML collection instead of node list
+    // Array.from/spread/querySelectorAll for forEach
+    document.querySelectorAll('.namespace').forEach(div => div.addEventListener('click', (e) => {
+      console.log(e.target);
+      console.log(div.dataset.endpoint);
+    }));
+  },
+};
 //
 // ─── SOCKET.IO STUFF ────────────────────────────────────────────────────────────
 //
@@ -33,28 +58,18 @@ function addMessage(msg) {
 * and creates new Manager
  */
 const socket = io('http://localhost:59768'); // "/" namespace/endpoint
-const socket2 = io('http://localhost:59768/test'); // "/test" namespace/endpoint
+
+// Listen for incoming namespaces data
+socket.on('nsData', ui.populateNsList);
 
 socket.on('connect', () => console.log(`Socket ID: ${socket.id}`));
-
-socket2.on('connect', () => console.log(`Test socket ID: ${socket2.id}`));
 
 // Custom events work the same way here in the client (any string except reserved ones)
 socket.on('msgFromServer', (objectFromServer) => {
   const displayString = `Data Received: ${JSON.stringify(objectFromServer)}`;
   console.log(displayString); // Doesn't need to be an object, just happen to be sending one
-  p.textContent = displayString;
+  // p.textContent = displayString;
   socket.emit('msgToServer', { msg: 'Sent from client' });
 });
 
-/**
- * ping/pong done automatically, defaults customizable on server
- * Default engine.io ping/pong:
- * pingInterval 25000 (ping every 25s)
- * pingTimeout 5000 (wait 5s for pong packet to come back)
- */
-
-socket.on('ping', () => console.log('Ping received from server'));
-socket.on('pong', latency => console.log(`Pong sent to server. Latency: ${latency}`));
-
-socket.on('msgToClients', ({ newMsg }) => addMessage(newMsg));
+// socket.on('msgToClients', ({ newMsg }) => addMessage(newMsg));
