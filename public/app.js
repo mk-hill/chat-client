@@ -10,6 +10,7 @@ const elems = {
   memberCount: document.querySelector('.curr-room-num-users').childNodes[0],
   messages: document.querySelector('#messages'),
   currentRoomTitle: document.querySelector('.curr-room-text'),
+  searchBox: document.getElementById('search-box'),
 };
 
 const ui = {
@@ -97,6 +98,17 @@ elems.msgForm.addEventListener('submit', (e) => {
   elems.msgInput.value = ''; // Clear input
 });
 
+elems.searchBox.addEventListener('input', (e) => {
+  elems.messages.childNodes.forEach((node) => {
+    // Filter messages based on search input, case insensitive
+    if (!node.textContent.toLowerCase().includes(e.target.value.toLowerCase())) {
+      node.style.display = 'none';
+    } else {
+      node.style.display = 'block';
+    }
+  });
+});
+
 //
 // ─── SOCKET.IO STUFF ────────────────────────────────────────────────────────────
 //
@@ -111,7 +123,8 @@ const state = {
 const socket = {
   url: 'http://localhost:59768',
 
-  main: io(this.url), // "/" namespace
+  // Can send data iu optional 2nd param, using messages instead atm
+  main: io(this.url, { query: { username: state.username } }), // "/" namespace
 
   joinNamespace(endpoint) {
     // remove slash from keys
@@ -163,5 +176,8 @@ socket.main.on('msgFromServer', (objectFromServer) => {
   // p.textContent = displayString;
   socket.emit('msgToServer', { msg: 'Sent from client' });
 });
+
+const name = prompt('Enter Username');
+state.username = name;
 
 // socket.on('msgToClients', ({ newMsg }) => addMessage(newMsg));

@@ -17,6 +17,7 @@ server.on('connect', (socket) => {
   const nsData = namespaces.map(({ img, endpoint }) => ({ img, endpoint }));
   // Send array to only current socket
   socket.emit('nsData', nsData);
+  console.log(socket.handshake);
 });
 
 // Alert all sockets in a given room that the member count has changed
