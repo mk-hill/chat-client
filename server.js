@@ -19,6 +19,19 @@ server.on('connect', (socket) => {
   socket.emit('nsData', nsData);
 });
 
+// Alert all sockets in a given room that the member count has changed
+function emitMemberUpdate(namespace, room) {
+  server
+    .of(namespace)
+    .in(room)
+    .clients((err, clients) => {
+      server
+        .of(namespace)
+        .in(room)
+        .emit('updateMemberCount', clients.length);
+    });
+}
+
 // Listen for connection on each namespace
 namespaces.forEach((namespace) => {
   const { endpoint, rooms, title } = namespace;
@@ -27,6 +40,10 @@ namespaces.forEach((namespace) => {
     // A socket connected to one of the namespaces, send associated room info
     socket.emit('loadRooms', rooms);
     socket.on('joinRoom', (roomTitle, ack) => {
+      // Leave prior room
+      const lastRoom = Object.keys(socket.rooms)[1];
+      socket.leave(lastRoom);
+      emitMemberUpdate(endpoint, lastRoom);
       socket.join(roomTitle);
       // Find room history and send to this socket only
       socket.emit('loadHistory', rooms.find(room => room.title === roomTitle).history);
@@ -35,16 +52,18 @@ namespaces.forEach((namespace) => {
       //   .of(endpoint)
       //   .in(roomTitle)
       //   .clients((err, clients) => ack(clients.length));
+
       // ^No longer necessary, updating all members below
-      server
-        .of(endpoint)
-        .in(roomTitle)
-        .clients((err, clients) => {
-          server
-            .of(endpoint)
-            .in(roomTitle)
-            .emit('updateMemberCount', clients.length);
-        });
+      emitMemberUpdate(endpoint, roomTitle);
+      // server
+      //   .of(endpoint)
+      //   .in(roomTitle)
+      //   .clients((err, clients) => {
+      //     server
+      //       .of(endpoint)
+      //       .in(roomTitle)
+      //       .emit('updateMemberCount', clients.length);
+      //   });
     });
 
     socket.on('newUserMsg', (msg) => {
@@ -60,5 +79,12 @@ namespaces.forEach((namespace) => {
         .to(roomTitle)
         .emit('newMsgToClient', msg);
     });
+
+    // socket.on('disconnect', () => {
+    //   namespace.rooms.forEach(({ title }) => {
+    //     socket.leave(title);
+    //     emitMemberUpdate(namespace, title);
+    //   });
+    // });
   });
 });

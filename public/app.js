@@ -70,6 +70,7 @@ const ui = {
     text, avatar, username, time,
   }) {
     const li = document.createElement('li');
+    // todo escape tags or manually create all elems
     li.innerHTML = `
       <div class="user-image">
         <img src=${avatar} />
@@ -91,6 +92,7 @@ elems.msgForm.addEventListener('submit', (e) => {
     username: state.username,
     time: new Date().toLocaleString(),
   };
+  if (!fullMsg.text) return;
   state.currentNamespace.emit('newUserMsg', fullMsg);
   elems.msgInput.value = ''; // Clear input
 });
@@ -113,21 +115,28 @@ const socket = {
 
   joinNamespace(endpoint) {
     // remove slash from keys
-    const nsKey = endpoint.slice(1);
-    this[nsKey] = io(`${this.url}${endpoint}`);
-    state.currentNamespace = this[nsKey];
-    this[nsKey].on('loadRooms', ui.populateRoomList);
-    this[nsKey].on('newMsgToClient', msg => ui.addMessage(msg));
-    this[nsKey].on('loadHistory', ui.populateHistory);
-    this[nsKey].on('updateMemberCount', ui.updateMemberCount);
+    // const nsKey = endpoint.slice(1);
+    // this[nsKey] = io(`${this.url}${endpoint}`);
+    if (state.currentNamespace) {
+      // close prior socket
+      state.currentNamespace.close();
+      // clean up event listeners
+    }
+    state.currentNamespace = io(`${this.url}${endpoint}`);
+    state.currentNamespace.on('loadRooms', ui.populateRoomList);
+    state.currentNamespace.on('newMsgToClient', msg => ui.addMessage(msg));
+    state.currentNamespace.on('loadHistory', ui.populateHistory);
+    state.currentNamespace.on('updateMemberCount', ui.updateMemberCount);
   },
 
   joinRoom(title) {
-    console.log(title);
     // Increment room member count on ack
-    state.currentNamespace.emit('joinRoom', title, (memberCount) => {
-      ui.updateMemberCount(memberCount);
-    });
+    // state.currentNamespace.emit('joinRoom', title, (memberCount) => {
+    //   ui.updateMemberCount(memberCount);
+    // });
+
+    // ^ No longer necessary, all members updated by server on join
+    state.currentNamespace.emit('joinRoom', title);
     state.currentRoom = title;
     ui.clearMessageList();
     ui.displayRoomTitle(title);
