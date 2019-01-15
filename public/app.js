@@ -9,6 +9,7 @@ const elems = {
   msgInput: document.getElementById('user-message'),
   memberCount: document.querySelector('.curr-room-num-users').childNodes[0],
   messages: document.querySelector('#messages'),
+  currentRoomTitle: document.querySelector('.curr-room-text'),
 };
 
 const ui = {
@@ -44,8 +45,13 @@ const ui = {
     // join first room by default
     socket.joinRoom(roomsData[0].title);
     document.querySelectorAll('.room-title').forEach(li => li.addEventListener('click', (e) => {
-      console.log(e.target.textContent);
+      // Using li instead of e.target to account for clicks on icon span
+      socket.joinRoom(li.textContent);
     }));
+  },
+
+  populateHistory(messages) {
+    messages.forEach(ui.addMessage);
   },
 
   updateMemberCount(memberCount) {
@@ -56,17 +62,21 @@ const ui = {
     elems.messages.innerHTML = '';
   },
 
-  addMessage(msg) {
+  displayRoomTitle(title) {
+    elems.currentRoomTitle.textContent = title;
+  },
+
+  addMessage({
+    text, avatar, username, time,
+  }) {
     const li = document.createElement('li');
     li.innerHTML = `
       <div class="user-image">
-        <img src=${state.avatar} />
+        <img src=${avatar} />
       </div>
       <div class="user-message">
-         <div class="user-name-time">${
-  state.username
-} <span>${new Date().toLocaleString()}</span></div>
-         <div class="message-text">${msg}</div>
+         <div class="user-name-time">${username} <span>${time}</span></div>
+         <div class="message-text">${text}</div>
       </div>
     `;
     elems.messages.appendChild(li);
@@ -75,7 +85,13 @@ const ui = {
 
 elems.msgForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  state.currentNamespace.emit('newUserMsg', elems.msgInput.value);
+  const fullMsg = {
+    text: elems.msgInput.value,
+    avatar: state.avatar,
+    username: state.username,
+    time: new Date().toLocaleString(),
+  };
+  state.currentNamespace.emit('newUserMsg', fullMsg);
   elems.msgInput.value = ''; // Clear input
 });
 
@@ -101,7 +117,9 @@ const socket = {
     this[nsKey] = io(`${this.url}${endpoint}`);
     state.currentNamespace = this[nsKey];
     this[nsKey].on('loadRooms', ui.populateRoomList);
-    this[nsKey].on('newMsgToClients', msg => ui.addMessage(msg));
+    this[nsKey].on('newMsgToClient', msg => ui.addMessage(msg));
+    this[nsKey].on('loadHistory', ui.populateHistory);
+    this[nsKey].on('updateMemberCount', ui.updateMemberCount);
   },
 
   joinRoom(title) {
@@ -112,6 +130,7 @@ const socket = {
     });
     state.currentRoom = title;
     ui.clearMessageList();
+    ui.displayRoomTitle(title);
   },
 
   getNamespace(endpoint) {

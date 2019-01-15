@@ -21,19 +21,30 @@ server.on('connect', (socket) => {
 
 // Listen for connection on each namespace
 namespaces.forEach((namespace) => {
-  server.of(namespace.endpoint).on('connect', (socket) => {
-    console.log(`${socket.id} has joined ${namespace.title}`);
+  const { endpoint, rooms, title } = namespace;
+  server.of(endpoint).on('connect', (socket) => {
+    console.log(`${socket.id} has joined ${title}`);
     // A socket connected to one of the namespaces, send associated room info
-    socket.emit('loadRooms', namespace.rooms);
+    socket.emit('loadRooms', rooms);
     socket.on('joinRoom', (roomTitle, ack) => {
-      // todo deal with history
-      console.log(roomTitle);
       socket.join(roomTitle);
-      // Sending current room member count in ack
+      // Find room history and send to this socket only
+      socket.emit('loadHistory', rooms.find(room => room.title === roomTitle).history);
+      // Sending current room member count in ack upon join
+      // server
+      //   .of(endpoint)
+      //   .in(roomTitle)
+      //   .clients((err, clients) => ack(clients.length));
+      // ^No longer necessary, updating all members below
       server
-        .of(namespace.endpoint)
+        .of(endpoint)
         .in(roomTitle)
-        .clients((err, clients) => ack(clients.length));
+        .clients((err, clients) => {
+          server
+            .of(endpoint)
+            .in(roomTitle)
+            .emit('updateMemberCount', clients.length);
+        });
     });
 
     socket.on('newUserMsg', (msg) => {
@@ -42,10 +53,12 @@ namespaces.forEach((namespace) => {
       // Socket.rooms returns all rooms socket is in, including the sockets own room it automatically
       // joins at index 0. index 1 is the room title.
       const roomTitle = Object.keys(socket.rooms)[1];
+      // Find room object and add msg to its history
+      rooms.find(room => room.title === roomTitle).addMessage(msg);
       server
-        .of(namespace.endpoint)
+        .of(endpoint)
         .to(roomTitle)
-        .emit('newMsgToClients', msg);
+        .emit('newMsgToClient', msg);
     });
   });
 });
