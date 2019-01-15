@@ -1,29 +1,14 @@
 //
 // ─── DOM STUFF ──────────────────────────────────────────────────────────────────
 //
-/**
-const p = document.querySelector('p');
-const msgInput = document.getElementById('user-input');
-const msgList = document.getElementById('msg-list');
 
-document.getElementById('msg-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const userMsg = msgInput.value;
-  if (!userMsg) return; // ignore empty submit
-  msgInput.value = '';
-  socket.emit('userMsg', { userMsg });
-});
-
-function addMessage(msg) {
-  const newListItem = document.createElement('li');
-  newListItem.className = 'text-secondary';
-  newListItem.textContent = `${Date.now()}: ${msg}`;
-  msgList.appendChild(newListItem);
-}
- */
 const elems = {
   nsContainer: document.querySelector('.namespaces'),
   roomsContainer: document.querySelector('.room-list'),
+  msgForm: document.querySelector('.message-form'),
+  msgInput: document.getElementById('user-message'),
+  memberCount: document.querySelector('.curr-room-num-users').childNodes[0],
+  messages: document.querySelector('#messages'),
 };
 
 const ui = {
@@ -41,8 +26,7 @@ const ui = {
     // getElementsByClassName returns HTML collection instead of node list
     // Array.from/spread/querySelectorAll for forEach
     document.querySelectorAll('.namespace').forEach(div => div.addEventListener('click', (e) => {
-      console.log(e.target);
-      console.log(div.dataset.endpoint);
+      socket.joinNamespace(div.dataset.endpoint);
     }));
   },
 
@@ -51,56 +35,95 @@ const ui = {
     roomsData.forEach((room) => {
       const li = document.createElement('li');
       li.className = 'room-title';
+      li.textContent = room.title;
       const span = document.createElement('span');
-      span.textContent = ` ${room.title}`;
       span.classList.add('glyphicon', room.isPrivate ? 'glyphicon-lock' : 'glyphicon-globe');
-      li.appendChild(span);
+      li.prepend(span); // Adding span before textContent
       elems.roomsContainer.appendChild(li);
     });
-
+    // join first room by default
+    socket.joinRoom(roomsData[0].title);
     document.querySelectorAll('.room-title').forEach(li => li.addEventListener('click', (e) => {
       console.log(e.target.textContent);
     }));
   },
+
+  updateMemberCount(memberCount) {
+    elems.memberCount.textContent = memberCount;
+  },
+
+  clearMessageList() {
+    elems.messages.innerHTML = '';
+  },
+
+  addMessage(msg) {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div class="user-image">
+        <img src=${state.avatar} />
+      </div>
+      <div class="user-message">
+         <div class="user-name-time">${
+  state.username
+} <span>${new Date().toLocaleString()}</span></div>
+         <div class="message-text">${msg}</div>
+      </div>
+    `;
+    elems.messages.appendChild(li);
+  },
 };
 
-/**
- * <li onclick="joinRoom(1,2)">
-              <span class="glyphicon glyphicon-lock"></span>Main Room
-            </li>
-            <li onclick="joinRoom(2,1)">
-              <span class="glyphicon glyphicon-globe"></span>Meeting Room
-            </li>
- */
+elems.msgForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  state.currentNamespace.emit('newUserMsg', elems.msgInput.value);
+  elems.msgInput.value = ''; // Clear input
+});
+
 //
 // ─── SOCKET.IO STUFF ────────────────────────────────────────────────────────────
 //
 
-/**
- * Client importable:
-* import io from 'socket.io-client';
-
-* Client also deliverable by server, loaded in separate script tag
-* Invocation returns "Socket" (not the same class as the one used on the server),
-* and creates new Manager
- */
+const state = {
+  avatar: 'https://via.placeholder.com/30',
+  username: 'Guest',
+  currentNamespace: null,
+  currentRoom: null,
+};
 
 const socket = {
   url: 'http://localhost:59768',
 
   main: io(this.url), // "/" namespace
 
-  addNamespace(endpoint) {
+  joinNamespace(endpoint) {
     // remove slash from keys
-    this[endpoint.slice(1)] = io(`${this.url}${endpoint}`);
+    const nsKey = endpoint.slice(1);
+    this[nsKey] = io(`${this.url}${endpoint}`);
+    state.currentNamespace = this[nsKey];
+    this[nsKey].on('loadRooms', ui.populateRoomList);
+    this[nsKey].on('newMsgToClients', msg => ui.addMessage(msg));
+  },
+
+  joinRoom(title) {
+    console.log(title);
+    // Increment room member count on ack
+    state.currentNamespace.emit('joinRoom', title, (memberCount) => {
+      ui.updateMemberCount(memberCount);
+    });
+    state.currentRoom = title;
+    ui.clearMessageList();
+  },
+
+  getNamespace(endpoint) {
+    return this[endpoint.slice(1)];
   },
 };
 
 // Listen for incoming namespaces data
 socket.main.on('nsData', (nsData) => {
   ui.populateNsList(nsData);
-  nsData.map(ns => ns.endpoint).forEach(endpoint => socket.addNamespace(endpoint));
-  socket.javascript.on('loadRooms', ui.populateRoomList);
+  // Join first namespace by default
+  socket.joinNamespace(nsData[0].endpoint);
 });
 
 socket.main.on('connect', () => console.log(`Socket ID: ${socket.main.id}`));

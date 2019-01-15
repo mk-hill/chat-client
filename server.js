@@ -25,5 +25,27 @@ namespaces.forEach((namespace) => {
     console.log(`${socket.id} has joined ${namespace.title}`);
     // A socket connected to one of the namespaces, send associated room info
     socket.emit('loadRooms', namespace.rooms);
+    socket.on('joinRoom', (roomTitle, ack) => {
+      // todo deal with history
+      console.log(roomTitle);
+      socket.join(roomTitle);
+      // Sending current room member count in ack
+      server
+        .of(namespace.endpoint)
+        .in(roomTitle)
+        .clients((err, clients) => ack(clients.length));
+    });
+
+    socket.on('newUserMsg', (msg) => {
+      console.log(msg);
+      // Send msg to all sockets in the same room
+      // Socket.rooms returns all rooms socket is in, including the sockets own room it automatically
+      // joins at index 0. index 1 is the room title.
+      const roomTitle = Object.keys(socket.rooms)[1];
+      server
+        .of(namespace.endpoint)
+        .to(roomTitle)
+        .emit('newMsgToClients', msg);
+    });
   });
 });
