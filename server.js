@@ -23,5 +23,7 @@ server.on('connect', (socket) => {
 namespaces.forEach((namespace) => {
   server.of(namespace.endpoint).on('connect', (socket) => {
     console.log(`${socket.id} has joined ${namespace.title}`);
+    // A socket connected to one of the namespaces, send associated room info
+    socket.emit('loadRooms', namespace.rooms);
   });
 });
